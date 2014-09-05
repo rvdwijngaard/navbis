@@ -1,0 +1,203 @@
+OOBJECT Page 11093600 N153 Connections
+{
+  OBJECT-PROPERTIES
+  {
+    Date=23-06-15;
+    Time=12:00:00;
+    Version List=NAVBISW17.10;
+  }
+  PROPERTIES
+  {
+    CaptionML=ENU=OEM - Connections;
+    InsertAllowed=No;
+    SourceTable=Table11093600;
+    PageType=List;
+    CardPageID=N153 Connection;
+    OnInit=VAR
+             Text000@1000 : TextConst 'ENU="OEM Connections is not enabled; Please enable the product via Product Registration."';
+           BEGIN
+             IF NOT ProductRegistration.EnabledByCodeunitId(CODEUNIT::"N153 Product Registration") THEN
+               ERROR(Text000);
+           END;
+
+    OnAfterGetRecord=BEGIN
+                       Published := Status = Status::Published;
+                     END;
+
+    ActionList=ACTIONS
+    {
+      { 7       ;0   ;ActionContainer;
+                      ActionContainerType=ActionItems }
+      { 9       ;1   ;Action    ;
+                      Name=New;
+                      CaptionML=ENU=New;
+                      Promoted=Yes;
+                      Image=NewDocument;
+                      OnAction=VAR
+                                 CreateNewConnection@1000 : Codeunit 11069492;
+                               BEGIN
+                                 CreateNewConnection.CreateNewConnection(DATABASE::"N153 Connection","No.");
+                                 Rec.GET("No.");
+                               END;
+                                }
+      { 23      ;1   ;Action    ;
+                      Name=Process;
+                      ShortCutKey=F9;
+                      CaptionML=ENU=Process;
+                      Promoted=Yes;
+                      PromotedIsBig=Yes;
+                      Image=PostDocument;
+                      PromotedCategory=Process;
+                      OnAction=VAR
+                                 ProcessPipeline@1000 : Codeunit 11069471;
+                               BEGIN
+                                 ProcessPipeline.Process(DATABASE::"N153 Connection","No.")
+                               END;
+                                }
+      { 10      ;1   ;Action    ;
+                      Name=Import Configuration;
+                      Image=Import;
+                      OnAction=BEGIN
+                                 CODEUNIT.RUN(CODEUNIT::"N153 Import Connection");
+                               END;
+                                }
+      { 22      ;1   ;Action    ;
+                      Name=Export Configuration;
+                      Image=Export;
+                      OnAction=BEGIN
+                                 Export();
+                               END;
+                                }
+      { 21      ;1   ;Action    ;
+                      CaptionML=ENU=Save As Template;
+                      Image=Template;
+                      OnAction=VAR
+                                 ConnectionTemplateMgt@1000 : Codeunit 11069493;
+                               BEGIN
+                                 ConnectionTemplateMgt.SaveAsTemplate(DATABASE::"N153 Connection","No.",Description);
+                               END;
+                                }
+      { 20      ;    ;ActionContainer;
+                      ActionContainerType=RelatedInformation }
+      { 19      ;1   ;Action    ;
+                      Name=Documents;
+                      RunObject=Page 11069378;
+                      RunPageLink=Source Type=CONST(11093600),
+                                  Source No.=FIELD(No.);
+                      Promoted=Yes;
+                      PromotedIsBig=Yes;
+                      Image=Documents;
+                      PromotedCategory=Process }
+      { 18      ;1   ;Action    ;
+                      Name=Pipeline;
+                      CaptionML=ENU=Pipeline;
+                      RunObject=Page 11069391;
+                      RunPageLink=Source Type=CONST(11093600),
+                                  Source No.=FIELD(No.);
+                      Promoted=Yes;
+                      PromotedIsBig=Yes;
+                      Image=Route;
+                      PromotedCategory=Process }
+      { 17      ;1   ;Action    ;
+                      Name=Check Configuration;
+                      Promoted=Yes;
+                      PromotedIsBig=Yes;
+                      Image=CheckRulesSyntax;
+                      PromotedCategory=Process;
+                      OnAction=VAR
+                                 PipelineConfigCheck@1000 : Codeunit 11069486;
+                               BEGIN
+                                 PipelineConfigCheck.CheckConfigurationWithDialog(DATABASE::"N153 Connection","No.");
+                               END;
+                                }
+      { 16      ;1   ;Action    ;
+                      Name=Publish;
+                      CaptionML=ENU=Publish;
+                      RunObject=Codeunit 11093600;
+                      Promoted=Yes;
+                      Enabled=NOT(Published);
+                      PromotedIsBig=Yes;
+                      Image=Certificate;
+                      PromotedCategory=Process }
+      { 15      ;1   ;Action    ;
+                      Name=Queue;
+                      CaptionML=ENU=Queue;
+                      RunObject=Page 11069371;
+                      RunPageLink=Source Type=CONST(11093600),
+                                  Source No.=FIELD(No.);
+                      Promoted=Yes;
+                      Image=ListPage;
+                      PromotedCategory=Process }
+      { 14      ;1   ;Action    ;
+                      Name=Design;
+                      CaptionML=ENU=Design;
+                      Promoted=Yes;
+                      Enabled=Published;
+                      PromotedIsBig=Yes;
+                      Image=Design;
+                      PromotedCategory=Process;
+                      OnAction=VAR
+                                 Text000@1000 : TextConst 'ENU="Do you want to Design this Connection? "';
+                                 PublishConnection@1001 : Codeunit 11093600;
+                               BEGIN
+                                 IF CONFIRM(Text000) THEN
+                                   PublishConnection.Design(Rec);
+                               END;
+                                }
+      { 13      ;1   ;Action    ;
+                      Name=History;
+                      CaptionML=ENU=History;
+                      RunObject=Page 11069382;
+                      RunPageLink=Source Type=CONST(11093600),
+                                  Source No.=FIELD(No.);
+                      Promoted=Yes;
+                      Image=History;
+                      PromotedCategory=Process }
+      { 12      ;1   ;Action    ;
+                      Name=Log;
+                      Promoted=Yes;
+                      Image=Log;
+                      PromotedCategory=Process;
+                      OnAction=BEGIN
+                                 ShowErrorLog()
+                               END;
+                                }
+      { 11      ;1   ;Action    ;
+                      Name=Companies;
+                      RunObject=Page 11069485;
+                      RunPageLink=Source Type=CONST(11093600),
+                                  Source No.=FIELD(No.);
+                      Image=Company;
+                      RunPageMode=View }
+    }
+  }
+  CONTROLS
+  {
+    { 1   ;0   ;Container ;
+                ContainerType=ContentArea }
+
+    { 2   ;1   ;Group     ;
+                Name=Group;
+                GroupType=Repeater }
+
+    { 3   ;2   ;Field     ;
+                SourceExpr="No." }
+
+    { 4   ;2   ;Field     ;
+                SourceExpr=Description }
+
+    { 5   ;2   ;Field     ;
+                SourceExpr=Status }
+
+  }
+  CODE
+  {
+    VAR
+      ProductRegistration@1000 : Codeunit 11068750;
+      SolutionCenter@1001 : Codeunit 11068751;
+      Published@1002 : Boolean INDATASET;
+
+    BEGIN
+    END.
+  }
+}
