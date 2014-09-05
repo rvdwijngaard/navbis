@@ -10,6 +10,7 @@ OOBJECT Page 11093600 N153 Connections
   {
     CaptionML=ENU=OEM - Connections;
     InsertAllowed=No;
+    InsertAllowed=Mabe;
     SourceTable=Table11093600;
     PageType=List;
     CardPageID=N153 Connection;
