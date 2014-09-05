@@ -1,0 +1,118 @@
+OBJECT Codeunit 11068832 N108 State Change for List
+{
+  OBJECT-PROPERTIES
+  {
+    Date=27-08-14;
+    Time=12:00:00;
+    Version List=NAVBISW17.10;
+  }
+  PROPERTIES
+  {
+    OnRun=BEGIN
+          END;
+
+  }
+  CODE
+  {
+
+    PROCEDURE UpdateStatusForRecordSelection@1100499000(VAR RecRef@1100499000 : RecordRef) Result : Boolean;
+    VAR
+      TempWorkflowLine@1100499002 : TEMPORARY Record 11068783;
+      TempWorkflowLine2@1100499003 : TEMPORARY Record 11068783;
+      TempWorkflowLine3@1100499006 : TEMPORARY Record 11068783;
+      TempWorkflowLine4@1000 : TEMPORARY Record 11068783;
+      WorkflowStatusMgt@1100499001 : Codeunit 11068798;
+      i@1100499004 : Integer;
+      Text000@1100499005 : TextConst 'ENU=The status of %1 records has been updated succesfully';
+      Text001@1100499007 : TextConst 'ENU=The state change is not allowed for the record selection';
+    BEGIN
+      IF RecRef.COUNT = 1 THEN
+        EXIT(WorkflowStatusMgt.MoveRecordToNextState(RecRef));
+      Result := TRUE;
+      IF RecRef.FINDSET THEN
+        REPEAT
+          i += 1;
+          TempWorkflowLine.RESET;
+          TempWorkflowLine.DELETEALL;
+
+          WorkflowStatusMgt.ReadRecordNextStateBuffer(RecRef,TempWorkflowLine);
+          IF TempWorkflowLine.FINDSET THEN
+            REPEAT
+              IF TempWorkflowLine2."Work Flow No." <> '' THEN BEGIN
+                TempWorkflowLine2.TESTFIELD("Work Flow No.",TempWorkflowLine."Work Flow No.");
+                TempWorkflowLine2.TESTFIELD("Version Code",TempWorkflowLine."Version Code");
+              END;
+
+              // add the state transitions to the buffer which maintains all transitions for the selection
+              TempWorkflowLine2.SETRANGE("Work Flow No.",TempWorkflowLine."Work Flow No.");
+              TempWorkflowLine2.SETRANGE("Version Code",TempWorkflowLine."Version Code");
+              TempWorkflowLine2.SETRANGE("Code To",TempWorkflowLine."Code To");
+              IF NOT TempWorkflowLine2.FINDFIRST THEN BEGIN
+                TempWorkflowLine2 := TempWorkflowLine;
+                TempWorkflowLine2.INSERT;
+              END ELSE
+                IF NOT TempWorkflowLine.Allowed THEN BEGIN
+                  TempWorkflowLine2.Allowed := FALSE;
+                  TempWorkflowLine2."User Message" := TempWorkflowLine."User Message";
+                  TempWorkflowLine2.MODIFY;
+                END;
+
+              // check if the state transition is allowed for all records in the selection
+              IF TempWorkflowLine.Allowed THEN BEGIN
+                IF i = 1 THEN BEGIN
+                  // initialize this buffer only for the first record in the selection
+                  TempWorkflowLine3 := TempWorkflowLine;
+                  TempWorkflowLine3.INSERT;
+                END;
+                IF TempWorkflowLine.Allowed THEN BEGIN
+                    TempWorkflowLine4 := TempWorkflowLine;
+                    TempWorkflowLine4.INSERT;
+                END;
+              END;
+            UNTIL TempWorkflowLine.NEXT=0;
+            //Compare current allowed buffer(4) with total allowed buffer(3)
+            TempWorkflowLine3.RESET;
+            IF TempWorkflowLine3.FINDSET THEN
+              REPEAT
+                TempWorkflowLine4.SETRANGE("Code To",TempWorkflowLine3."Code To");
+                IF TempWorkflowLine4.ISEMPTY THEN
+                  TempWorkflowLine3.DELETE;
+              UNTIL TempWorkflowLine3.NEXT=0;
+
+            TempWorkflowLine4.RESET;
+            TempWorkflowLine4.DELETEALL;
+        UNTIL RecRef.NEXT=0;
+
+      // finally check if allowed states are allowed for all records by checking buffer no. 3
+      TempWorkflowLine2.RESET;
+      IF TempWorkflowLine2.FINDSET THEN
+        REPEAT
+          TempWorkflowLine3.SETRANGE("Code To",TempWorkflowLine2."Code To");
+          IF TempWorkflowLine2.Allowed AND TempWorkflowLine3.ISEMPTY THEN BEGIN
+            TempWorkflowLine2.Allowed := FALSE;
+            TempWorkflowLine2."User Message" := Text001;
+            TempWorkflowLine2.MODIFY;
+          END;
+        UNTIL TempWorkflowLine2.NEXT=0;
+
+      i := 0;
+      TempWorkflowLine2.SETRANGE(Allowed);
+      IF PAGE.RUNMODAL(PAGE::"N108 Work Flow Lines",TempWorkflowLine2) = ACTION::LookupOK THEN BEGIN
+        TempWorkflowLine2.SETRECFILTER;
+        TempWorkflowLine2.TESTFIELD(Allowed,TRUE);
+        IF RecRef.FINDSET THEN
+          REPEAT
+            IF WorkflowStatusMgt.MoveRecordToNextStateWithBuffer(RecRef,TempWorkflowLine2,FALSE) THEN
+              i += 1;
+          UNTIL RecRef.NEXT=0;
+        IF i > 0 THEN
+          MESSAGE(STRSUBSTNO(Text000,i));
+      END;
+    END;
+
+    BEGIN
+    END.
+  }
+}
+
+

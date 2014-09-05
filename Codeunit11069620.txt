@@ -1,0 +1,82 @@
+OBJECT Codeunit 11069620 N108 XmlToXml Translator
+{
+  OBJECT-PROPERTIES
+  {
+    Date=17-06-14;
+    Time=12:00:00;
+    Version List=NAVBISW17.10;
+  }
+  PROPERTIES
+  {
+    TableNo=11069373;
+    OnRun=VAR
+            XmlToXmlTranslator@1000 : Record 11069595;
+          BEGIN
+            ReadSetup(Rec,XmlToXmlTranslator);
+            RunActivity(XmlToXmlTranslator,Rec);
+          END;
+
+  }
+  CODE
+  {
+
+    LOCAL PROCEDURE ReadSetup@12(MessageQueue@1000 : Record 11069373;VAR XmlToXmlTranslator@1002 : Record 11069595);
+    VAR
+      RecRef@1001 : RecordRef;
+    BEGIN
+      MessageQueue.ReadActivitySetup(RecRef);
+      RecRef.SETTABLE(XmlToXmlTranslator);
+    END;
+
+    LOCAL PROCEDURE RunActivity@5(XmlToXmlTranslator@1000 : Record 11069595;VAR MessageQueue@1001 : Record 11069373);
+    VAR
+      BlobRef@1006 : Record 99008535;
+      FileManagement@1002 : Codeunit 419;
+      XslToHtmlTransformerActivity@1008 : DotNet "'TI.Pipeline, Version=13.4.0.0, Culture=neutral, PublicKeyToken=f476381a83e1102f'.TI.Pipeline.XslToHtmlTransformerActivity";
+      XslStream@1003 : InStream;
+    BEGIN
+      CheckSetup(XmlToXmlTranslator);
+
+      // get the xslt from the file system and load it in a blob
+      FileManagement.BLOBImportFromServerFile(BlobRef,XmlToXmlTranslator."Xslt File name");
+      BlobRef.Blob.CREATEINSTREAM(XslStream);
+
+      // run the activity
+      ApplyXsltOnMessageBody(MessageQueue,XslStream);
+    END;
+
+    PROCEDURE ApplyXsltOnMessageBody@1(VAR MessageQueue@1002 : Record 11069373;MappingXsltStream@1005 : InStream);
+    VAR
+      ActivityRunner@1001 : Codeunit 11069472;
+      XslTransformerSettings@1006 : DotNet "'TI.Pipeline, Version=13.4.0.0, Culture=neutral, PublicKeyToken=f476381a83e1102f'.TI.Pipeline.XslTransformerSettings";
+      XslTransformerActivity@1008 : DotNet "'TI.Pipeline, Version=13.4.0.0, Culture=neutral, PublicKeyToken=f476381a83e1102f'.TI.Pipeline.XSLTransformerActivity";
+    BEGIN
+      // The XsToHtmlTransformer applies an Xslt on the current message body.
+      XslTransformerSettings := XslTransformerSettings.XslTransformerSettings();
+      XslTransformerSettings.XslStream := MappingXsltStream;
+      //XslToHtmlTransformerActivity := XslToHtmlTransformerActivity.XslToHtmlTransformerActivity(XslTransformerSettings);
+      XslTransformerActivity := XslTransformerActivity.XSLTransformerActivity(XslTransformerSettings);
+
+      ActivityRunner.RunActivity(XslTransformerActivity,MessageQueue);
+    END;
+
+    PROCEDURE CheckSetup@14(XmlToXmlTranslator@1001 : Record 11069595);
+    BEGIN
+      XmlToXmlTranslator.TESTFIELD("Xslt File name");
+    END;
+
+    PROCEDURE Register@7() Code : Code[20];
+    VAR
+      PipelineSetup@1000 : Codeunit 11069372;
+      Text000@1002 : TextConst 'ENU=Generates an Xml Document by using a Microsoft Dynamics NAV XmlPort';
+    BEGIN
+      Code := 'XmlToXmlTranslator';
+      PipelineSetup.RegisterActivity(
+        Code,Text000,DATABASE::"N108 XmlToXml Translator",0,CODEUNIT::"N108 XmlToXml Translator",
+        CODEUNIT::"N108 XmlToXml Translator Test",0);
+    END;
+
+    BEGIN
+    END.
+  }
+}

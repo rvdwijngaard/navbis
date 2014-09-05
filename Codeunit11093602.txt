@@ -1,0 +1,24 @@
+OBJECT Codeunit 11093602 N153 Import Connection
+{
+  OBJECT-PROPERTIES
+  {
+    Date=23-06-14;
+    Time=12:00:00;
+    Version List=NAVBISW17.10;
+  }
+  PROPERTIES
+  {
+    OnRun=VAR
+            PackageHelper@1000 : Codeunit 11069490;
+          BEGIN
+            PackageHelper.UploadAndImportPackage(DATABASE::"N153 Connection");
+          END;
+
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}

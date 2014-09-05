@@ -1,0 +1,25 @@
+OBJECT Codeunit 11093603 N153 Job Queue Handler
+{
+  OBJECT-PROPERTIES
+  {
+    Date=23-06-14;
+    Time=12:00:00;
+    Version List=NAVBISW17.10;
+  }
+  PROPERTIES
+  {
+    TableNo=472;
+    OnRun=VAR
+            JobQueueMgt@1000 : Codeunit 11069477;
+          BEGIN
+            JobQueueMgt.Run(DATABASE::"N153 Connection","Parameter String");
+          END;
+
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}

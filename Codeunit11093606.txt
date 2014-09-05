@@ -1,0 +1,21 @@
+OBJECT Codeunit 11093606 N153 Enterprise
+{
+  OBJECT-PROPERTIES
+  {
+    Date=23-06-14;
+    Time=12:00:00;
+    Version List=NAVBISW17.10;
+  }
+  PROPERTIES
+  {
+    OnRun=BEGIN
+          END;
+
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}

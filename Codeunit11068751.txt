@@ -1,0 +1,268 @@
+OBJECT Codeunit 11068751 N108 Product Registration
+{
+  OBJECT-PROPERTIES
+  {
+    Date=17-06-14;
+    Time=12:00:00;
+    Version List=NAVBISW17.00;
+  }
+  PROPERTIES
+  {
+    OnRun=BEGIN
+          END;
+
+  }
+  CODE
+  {
+    VAR
+      LibMetadata@1000 : Codeunit 11068707;
+
+    PROCEDURE ParentComponentId@5() : Code[10];
+    BEGIN
+      EXIT('');
+    END;
+
+    PROCEDURE ComponentId@1() : Code[10];
+    BEGIN
+      EXIT('N108');
+    END;
+
+    PROCEDURE ComponentName@13() : Text[100];
+    VAR
+      Text000@1000 : TextConst 'ENU=Solution Center';
+    BEGIN
+      EXIT(Text000);
+    END;
+
+    PROCEDURE SolutionId@10() : Code[10];
+    BEGIN
+      EXIT('N108');
+    END;
+
+    PROCEDURE SolutionName@9() : Text[100];
+    VAR
+      Text000@1000 : TextConst 'ENU=Solution Center';
+    BEGIN
+      EXIT(Text000);
+    END;
+
+    PROCEDURE BuildCodeunitId@8() : Integer;
+    BEGIN
+      EXIT(CODEUNIT::"N108 Build Information");
+    END;
+
+    PROCEDURE Install@11() Result : Boolean;
+    VAR
+      RegisterCodeunit@1000 : Codeunit 11069575;
+    BEGIN
+      Result := TRUE;
+
+      InitPipelineActivities();
+      CreateUserRole();
+      CreateTableSetup();
+      RegisterClientAddIns();
+      CreateWebServices();
+      RegisterExpressionFunctions();
+    END;
+
+    PROCEDURE UnInstall@2() : Boolean;
+    BEGIN
+      EXIT(TRUE);
+    END;
+
+    PROCEDURE Upgrade@12() : Boolean;
+    BEGIN
+      InitPipelineActivities();
+      CreateTableSetup();
+      RegisterClientAddIns();
+      CreateWebServices();
+      RegisterExpressionFunctions();
+
+      EXIT(TRUE);
+    END;
+
+    PROCEDURE Enable@6() : Boolean;
+    BEGIN
+      EXIT(TRUE);
+    END;
+
+    PROCEDURE Disable@7() : Boolean;
+    BEGIN
+      EXIT(TRUE);
+    END;
+
+    LOCAL PROCEDURE CreateUserRole@1100472002();
+    VAR
+      UserRole@1100472000 : Record 2000000004;
+    BEGIN
+      // create a role for the power user
+      UserRole."Role ID" := 'TI-SCE-PU';
+      UserRole.Name := 'Solution Center Power Users';
+      UserRole.SETRECFILTER;
+      IF UserRole.ISEMPTY THEN
+        UserRole.INSERT(TRUE);
+      CreateUserRolePermissions(UserRole."Role ID");
+    END;
+
+    LOCAL PROCEDURE CreateUserRolePermissions@1100472001(RoleID@1100472001 : Code[20]);
+    VAR
+      Object@1100472002 : Record 2000000001;
+      Permission@1100472000 : Record 2000000005;
+    BEGIN
+      Object.SETRANGE(Type,Object.Type::TableData);
+      Object.SETFILTER(Name,'*' + ComponentId + '*');
+      Object.FINDSET;
+      REPEAT
+        Permission."Role ID" := RoleID;
+        Permission."Object Type" := Object.Type;
+        Permission."Object ID" := Object.ID;
+        Permission.SETRECFILTER;
+        IF Permission.ISEMPTY THEN BEGIN
+          Permission.INIT;
+          Permission."Read Permission" := Permission."Read Permission"::Yes;
+          Permission."Insert Permission" := Permission."Insert Permission"::Yes;
+          Permission."Delete Permission" := Permission."Delete Permission"::Yes;
+          Permission."Execute Permission" := Permission."Execute Permission"::Yes;
+          Permission.INSERT(TRUE);
+        END;
+      UNTIL Object.NEXT=0;
+    END;
+
+    LOCAL PROCEDURE InitPipelineActivities@1002();
+    VAR
+      PipelineSetup@1018 : Codeunit 11069372;
+      ActivityType@1002 : Record 11069365;
+    BEGIN
+      // endpoints
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Smtp Writer");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Outlook Mail Writer");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Ftp Reader");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Ftp Writer");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 File Writer");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 File Reader");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Sql Writer Endpoint");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Sql Reader Endpoint");
+
+      // activities
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Header Mapping Activity");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 CsvToXml Translator");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 TextToXml Translator");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 XmlToText Translator");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Document Mapper");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Record Generator");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Xml Generator");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 XmlPort Xml Generator");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 XmlPort Record Generator");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 XmlToCsv Translator");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 XmlToHtml Translator");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Message Splitter");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Attachment Generator");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Event Generator");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 XmlToXml Translator");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Document Upload Activity");
+
+      //events
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Record Change Event");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Timer Event");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 User Event");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Code Event");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Workflow Event");
+      PipelineSetup.RegisterCodeunit(CODEUNIT::"N108 Web Service Event Handler");
+    END;
+
+    LOCAL PROCEDURE CreateTableSetup@1009();
+    VAR
+      TableSetup@1000 : Record 11068820;
+      Text000@1001 : TextConst 'ENU=Table Setup Configuration';
+    BEGIN
+      // this setup is required for importing standard setups
+      TableSetup.INIT;
+      TableSetup."No." := 'N108TABLESETUP';
+      TableSetup.SETRECFILTER;
+      TableSetup.DELETEALL;
+
+      TableSetup.Description := Text000;
+      TableSetup."Table No." := DATABASE::"N108 Table Setup";
+      TableSetup."Document No." := TableSetup."No.";
+      TableSetup.INSERT;
+
+      CreateTableSetupDocument(TableSetup)
+    END;
+
+    LOCAL PROCEDURE CreateTableSetupDocument@1010(TableSetup@1003 : Record 11068820);
+    VAR
+      Document@1002 : Record 11069370;
+      DocumentLine@1001 : Record 11069371;
+      DocumentLine2@1004 : Record 11069371;
+      DocumentHelper@1000 : Codeunit 11068708;
+    BEGIN
+      Document.Type := Document.Type::Internal;
+      Document."No." := TableSetup."Document No.";
+      Document.Description := TableSetup.Description;
+      Document.SETRECFILTER;
+      Document.DELETEALL(TRUE);
+
+      Document.INSERT;
+
+      DocumentHelper.AddRootBlock(Document,DocumentLine,'',TableSetup."Table No.");
+      DocumentHelper.gFncAddBlockExportMembers(DocumentLine);
+      DocumentHelper.gFncAddBlockReference(DocumentLine,'',DATABASE::"N108 Document 2",
+        '"Type"=FIELD("Document Type"),"No."=FIELD("Document No.")');
+      DocumentHelper.gFncAddBlockExportMembers(DocumentLine);
+      DocumentHelper.gFncAddBlockComposition(DocumentLine,'',DATABASE::"N108 Document Line",
+        '"Document Type"=FIELD("Type"),"Document No."=FIELD("No.")');
+      DocumentHelper.gFncAddBlockExportMembers(DocumentLine);
+
+      // validate the document
+      DocumentLine.RESET;
+      DocumentLine.SETRANGE("Document Type",Document.Type);
+      DocumentLine.SETRANGE("Document No.",Document."No.");
+      CODEUNIT.RUN(CODEUNIT::"N108 Validate Document",DocumentLine);
+    END;
+
+    PROCEDURE RegisterClientAddIns@3();
+    VAR
+      ClientAddIn@1000 : Record 2000000069;
+      Text000@1001 : TextConst 'ENU=To Increase Html Editor for Microsoft Dynamics NAV';
+      Text001@1002 : TextConst 'ENU=To Increase Document Management for Microsoft Dynamics NAV';
+    BEGIN
+      ClientAddIn."Control Add-in Name" := 'TI.NotificationEditor.AddIn';
+      ClientAddIn."Public Key Token" := 'f476381a83e1102f';
+      ClientAddIn.Description := Text000;
+      ClientAddIn.SETRECFILTER;
+      IF ClientAddIn.ISEMPTY THEN
+        ClientAddIn.INSERT;
+
+      CLEAR(ClientAddIn);
+      ClientAddIn."Control Add-in Name" := 'TI.DocumentManagement.Control';
+      ClientAddIn."Public Key Token" := 'f476381a83e1102f';
+      ClientAddIn.Description := Text001;
+      ClientAddIn.SETRECFILTER;
+      IF ClientAddIn.ISEMPTY THEN
+        ClientAddIn.INSERT;
+    END;
+
+    PROCEDURE CreateWebServices@4();
+    VAR
+      WebService@1000 : Record 2000000076;
+    BEGIN
+      WebService."Object Type" := WebService."Object Type"::Query;
+      WebService."Service Name" := 'TIBISMessageHistoryService';
+      WebService."Object ID" := QUERY::"N108 Message Log Entries";
+      WebService.Published := TRUE;
+      WebService.SETRECFILTER;
+      IF WebService.ISEMPTY THEN
+        WebService.INSERT;
+    END;
+
+    PROCEDURE RegisterExpressionFunctions@14();
+    VAR
+      RegisterCodeunit@1000 : Codeunit 11069575;
+    BEGIN
+      RegisterCodeunit.AutoRegister(CODEUNIT::"N108 Function List 2");
+    END;
+
+    BEGIN
+    END.
+  }
+}

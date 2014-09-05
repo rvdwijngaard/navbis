@@ -1,0 +1,38 @@
+OBJECT Codeunit 11093600 N153 Publish Connection
+{
+  OBJECT-PROPERTIES
+  {
+    Date=23-06-14;
+    Time=12:00:00;
+    Version List=NAVBISW17.10;
+  }
+  PROPERTIES
+  {
+    TableNo=11093600;
+    OnRun=VAR
+            Connection@1000 : Codeunit 11069687;
+          BEGIN
+            IF Connection.PublishWithWizard(DATABASE::"N153 Connection","No.") THEN BEGIN
+              Status := Status::Published;
+              MODIFY;
+            END;
+          END;
+
+  }
+  CODE
+  {
+
+    PROCEDURE Design@1(VAR NewConnection@1000 : Record 11093600);
+    VAR
+      Connection@1002 : Codeunit 11069687;
+    BEGIN
+      IF Connection.Design(DATABASE::"N153 Connection",NewConnection."No.") THEN BEGIN
+        NewConnection.Status := NewConnection.Status::"Under Development";
+        NewConnection.MODIFY;
+      END;
+    END;
+
+    BEGIN
+    END.
+  }
+}

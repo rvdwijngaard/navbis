@@ -1,0 +1,111 @@
+OBJECT Codeunit 11093601 N153 Product Registration
+{
+  OBJECT-PROPERTIES
+  {
+    Date=23-06-14;
+    Time=12:00:00;
+    Version List=NAVBISW17.10;
+  }
+  PROPERTIES
+  {
+    OnRun=BEGIN
+          END;
+
+  }
+  CODE
+  {
+
+    PROCEDURE ParentComponentId@5() : Code[10];
+    BEGIN
+      EXIT('N108');
+    END;
+
+    PROCEDURE ComponentId@1() : Code[10];
+    BEGIN
+      EXIT('N153');
+    END;
+
+    PROCEDURE ComponentName@13() : Text[100];
+    VAR
+      Text000@1001 : TextConst 'ENU=OEM Connections';
+    BEGIN
+      EXIT(Text000);
+    END;
+
+    PROCEDURE SolutionId@3() : Code[10];
+    BEGIN
+      EXIT('NAVBIS');
+    END;
+
+    PROCEDURE SolutionName@4() : Text[100];
+    VAR
+      Text000@1000 : TextConst 'ENU=Business Integration Solutions';
+    BEGIN
+      EXIT(Text000);
+    END;
+
+    PROCEDURE BuildCodeunitId@8() : Integer;
+    BEGIN
+      EXIT(CODEUNIT::"N108 Build Information");
+    END;
+
+    PROCEDURE Install@9() Result : Boolean;
+    BEGIN
+      Result := TRUE;
+    END;
+
+    PROCEDURE UnInstall@2() : Boolean;
+    BEGIN
+      EXIT(TRUE);
+    END;
+
+    PROCEDURE Upgrade@12() : Boolean;
+    BEGIN
+      EXIT(TRUE);
+    END;
+
+    PROCEDURE Enable@6() : Boolean;
+    VAR
+      JobQueueMgt@1000 : Codeunit 11069477;
+    BEGIN
+      JobQueueMgt.RegisterJobQueueHandler(CODEUNIT::"N153 Job Queue Handler");
+      EXIT(TRUE);
+    END;
+
+    PROCEDURE Disable@7() : Boolean;
+    BEGIN
+      EXIT(TRUE);
+    END;
+
+    PROCEDURE SoftwareVendorId@11() : Text[100];
+    VAR
+      ProductRegistration@1000 : Codeunit 11068750;
+    BEGIN
+      EXIT(ProductRegistration.DefaultSoftwareVendorId())
+    END;
+
+    PROCEDURE SoftwareVendorName@17() : Text[100];
+    VAR
+      ProductRegistration@1000 : Codeunit 11068750;
+    BEGIN
+      EXIT(ProductRegistration.DefaultSoftwareVendorName())
+    END;
+
+    PROCEDURE GranuleId@10() : Integer;
+    BEGIN
+      EXIT(11068710);
+    END;
+
+    BEGIN
+    {
+      --------------------------------------------------------------------------------
+      To-Increase B.V. - www.to-increase.com
+      --------------------------------------------------------------------------------
+      ID          Date        Description
+      --------------------------------------------------------------------------------
+      N108F0000,  11-05-2010, Initial Design
+      --------------------------------------------------------------------------------
+    }
+    END.
+  }
+}

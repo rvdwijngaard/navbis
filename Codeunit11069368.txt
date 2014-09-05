@@ -1,0 +1,294 @@
+OBJECT Codeunit 11069368 N108 Document Xslt Mgt.
+{
+  OBJECT-PROPERTIES
+  {
+    Date=17-06-14;
+    Time=12:00:00;
+    Version List=NAVBISW17.00;
+  }
+  PROPERTIES
+  {
+    OnRun=VAR
+            TempBlob@1000 : Record 99008535;
+            Text000@1002 : TextConst 'ENU=%1-%2.xslt';
+          BEGIN
+          END;
+
+  }
+  CODE
+  {
+    VAR
+      TempMappingLine@1009 : TEMPORARY Record 11069568;
+      TempDocumentLine@1012 : TEMPORARY Record 11069371;
+      Writer@1008 : DotNet "'System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Xml.XmlWriter";
+      Settings@1007 : DotNet "'System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Xml.XmlWriterSettings";
+      Encoding@1006 : DotNet "'mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Text.Encoding";
+      StreamingMode@1000 : Boolean;
+
+    PROCEDURE GenerateXsltForMapping@1(NewStreamingMode@1004 : Boolean;VAR TempNewTargetDocumentLine@1000 : TEMPORARY Record 11069371;VAR TempNewMappingLine@1001 : TEMPORARY Record 11069568) FileName : Text;
+    VAR
+      BlobRef@1002 : Record 99008535;
+      FileManagement@1003 : Codeunit 419;
+    BEGIN
+      GetDocumentMapping(NewStreamingMode,TempNewTargetDocumentLine,TempNewMappingLine,BlobRef);
+      FileName := FileManagement.ServerTempFileName('xslt');
+      FileManagement.BLOBExportToServerFile(BlobRef,FileName);
+    END;
+
+    PROCEDURE GetDocumentMapping@17(NewStreamingMode@1003 : Boolean;VAR TempNewTargetDocumentLine@1001 : TEMPORARY Record 11069371;VAR TempNewMappingLine@1000 : TEMPORARY Record 11069568;VAR BlobRef@1002 : Record 99008535);
+    BEGIN
+      StreamingMode := NewStreamingMode;
+      TempMappingLine.COPY(TempNewMappingLine,TRUE);
+      TempDocumentLine.COPY(TempNewTargetDocumentLine,TRUE);
+      GenerateXslt(BlobRef);
+    END;
+
+    PROCEDURE GenerateXslt@34(VAR BlobRef@1001 : Record 99008535);
+    VAR
+      NVOutstream@1000 : OutStream;
+    BEGIN
+      InitXmlTextWriter();
+      BlobRef.Blob.CREATEOUTSTREAM(NVOutstream);
+      Writer := Writer.Create(NVOutstream,Settings);
+
+      Writer.WriteProcessingInstruction('xml','version="1.0" encoding="utf-16"');
+      Writer.WriteStartElement('xsl','stylesheet',Namespace);
+      WriteStylesheetAttributes();
+      WriteMapping();
+      Writer.WriteEndElement();
+      CloseXmlTextWriter();
+    END;
+
+    PROCEDURE WriteStylesheetAttributes@3();
+    VAR
+      ExcludeResultPrefixes@1000 : Text;
+    BEGIN
+      Writer.WriteAttributeString('version','1.0');
+      Writer.WriteAttributeString('xmlns','msxsl', '', 'urn:schemas-microsoft-com:xslt');
+      Writer.WriteAttributeString('xmlns','ExecuteGrammar', '', 'urn:ExecuteGrammarObj');
+      Writer.WriteAttributeString('xmlns','st', '', 'urn:Streamer');
+      Writer.WriteAttributeString('xmlns','dt', '', 'urn:schemas-microsoft-com:datatypes');
+      Writer.WriteAttributeString('xmlns','ti', '', 'http://www.to-increase.com/data/document');
+      ExcludeResultPrefixes := 'msxsl dt ExecuteGrammar st';
+      IF TempDocumentLine."Document Type" = TempDocumentLine."Document Type"::External THEN
+        ExcludeResultPrefixes += ' ti';
+      Writer.WriteAttributeString('exclude-result-prefixes',ExcludeResultPrefixes);
+      Writer.WriteStartElement('xsl','output',Namespace);
+      Writer.WriteAttributeString('method','xml');
+      Writer.WriteAttributeString('indent','yes');
+      Writer.WriteAttributeString('encoding','utf-16');
+      Writer.WriteEndElement();
+    END;
+
+    PROCEDURE WriteMapping@6();
+    BEGIN
+      Writer.WriteStartElement('xsl','template',Namespace);
+      Writer.WriteAttributeString('match','/');
+
+      IF NOT StreamingMode THEN BEGIN
+        Writer.WriteStartElement('xsl','variable',Namespace);
+        Writer.WriteAttributeString('name','addroot');
+        Writer.WriteAttributeString('select',TIRootNodeCondition());
+        Writer.WriteEndElement();
+
+        Writer.WriteStartElement('xsl','choose',Namespace);
+        Writer.WriteStartElement('xsl','when',Namespace);
+        Writer.WriteAttributeString('test','$addroot');
+        Writer.WriteStartElement('document','http://www.to-increase.com/data/document');
+        Writer.WriteStartElement('xsl','call-template',Namespace);
+        Writer.WriteAttributeString('name','WriteTarget');
+        Writer.WriteEndElement();
+        Writer.WriteEndElement();
+        Writer.WriteEndElement();
+        Writer.WriteStartElement('xsl','otherwise',Namespace);
+      END;
+
+      Writer.WriteStartElement('xsl','call-template',Namespace);
+      Writer.WriteAttributeString('name','WriteTarget');
+      Writer.WriteEndElement();
+
+      IF NOT StreamingMode THEN BEGIN
+        Writer.WriteEndElement();
+        Writer.WriteEndElement();
+      END;
+
+      Writer.WriteEndElement();
+
+      Writer.WriteStartElement('xsl','template',Namespace);
+      Writer.WriteAttributeString('name','WriteTarget');
+
+      TempDocumentLine.FINDFIRST;
+      WriteBlock(TempDocumentLine,TRUE);
+
+      Writer.WriteEndElement();
+    END;
+
+    PROCEDURE WriteBlock@25(ParentLine@1000 : Record 11069371;Root@1003 : Boolean);
+    VAR
+      TempDocumentLine2@1001 : TEMPORARY Record 11069371;
+      Mapping@1002 : Boolean;
+      Expr@1004 : Text;
+    BEGIN
+      TempDocumentLine2.COPY(TempDocumentLine,TRUE);
+
+      Mapping :=  HasMapping(ParentLine);
+      IF Mapping THEN BEGIN
+        Expr := ReadExpressionText(ParentLine);
+        Writer.WriteStartElement('xsl','for-each',Namespace);
+        IF Root THEN BEGIN
+          IF StreamingMode THEN
+            Writer.WriteAttributeString('select',STRSUBSTNO('st:GetIterator(''%1'')',Expr))
+          ELSE
+            Writer.WriteAttributeString('select',STRSUBSTNO('%1 | ti:document/%1',Expr));
+          Root := FALSE
+        END ELSE
+          Writer.WriteAttributeString('select',Expr)
+      END;
+      Writer.WriteStartElement(ParentLine."Node Name");
+      WriteAttributes(ParentLine);
+
+      TempDocumentLine2.SETRANGE("Parent Line No.",ParentLine."Line No.");
+      IF TempDocumentLine2.FINDSET THEN
+        REPEAT
+          CASE TempDocumentLine2."Line Type" OF
+            TempDocumentLine2."Line Type"::Block:
+              WriteBlock(TempDocumentLine2,Root);
+            TempDocumentLine2."Line Type"::Member:
+            IF TempDocumentLine2."Node Type" = TempDocumentLine2."Node Type":: Element THEN
+              WriteMember(TempDocumentLine2);
+          END;
+        UNTIL TempDocumentLine2.NEXT=0;
+
+      Writer.WriteEndElement();
+      IF Mapping THEN
+        Writer.WriteEndElement();
+    END;
+
+    PROCEDURE WriteAttributes@14(ParentLine@1000 : Record 11069371);
+    VAR
+      TempDocumentLine2@1001 : TEMPORARY Record 11069371;
+    BEGIN
+      TempDocumentLine2.COPY(TempDocumentLine,TRUE);
+
+      TempDocumentLine2.SETRANGE("Parent Line No.",ParentLine."Line No.");
+      TempDocumentLine2.SETRANGE("Line Type",TempDocumentLine2."Line Type"::Member);
+      TempDocumentLine2.SETRANGE("Node Type",TempDocumentLine2."Node Type"::Attribute);
+      IF TempDocumentLine2.FINDSET THEN
+        REPEAT
+          WriteMember(TempDocumentLine2);
+        UNTIL TempDocumentLine2.NEXT=0;
+    END;
+
+    LOCAL PROCEDURE InitXmlTextWriter@15();
+    VAR
+      FileManagement@1000 : Codeunit 419;
+      FileMode@1001 : DotNet "'mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.IO.FileMode";
+    BEGIN
+      Settings := Settings.XmlWriterSettings();
+      Settings.CloseOutput := FALSE;
+      Settings.Encoding := Encoding.Unicode;
+    END;
+
+    LOCAL PROCEDURE CloseXmlTextWriter@8();
+    BEGIN
+      Writer.Flush();
+      Writer.Dispose();
+    END;
+
+    LOCAL PROCEDURE Namespace@2() : Text;
+    BEGIN
+      EXIT('http://www.w3.org/1999/XSL/Transform')
+    END;
+
+    PROCEDURE InitTempTables@31(MappingSetup@1000 : Record 11069567);
+    VAR
+      DocumentLine@1002 : Record 11069371;
+      MappingMgt@1001 : Codeunit 11069571;
+    BEGIN
+      MappingMgt.CopyActualToTempTables(MappingSetup,TempMappingLine);
+
+      DocumentLine.SETRANGE("Document Type",MappingSetup."Target Document Type");
+      DocumentLine.SETRANGE("Document No.",MappingSetup."Target Document No.");
+      DocumentLine.FINDSET;
+      REPEAT
+        TempDocumentLine := DocumentLine;
+        TempDocumentLine.INSERT;
+      UNTIL DocumentLine.NEXT=0;
+    END;
+
+    LOCAL PROCEDURE ReadMapping@26(DocLine@1000 : Record 11069371) : Boolean;
+    BEGIN
+      TempMappingLine.SETRANGE("Line No.",DocLine."Line No.");
+      EXIT(TempMappingLine.FINDFIRST);
+    END;
+
+    LOCAL PROCEDURE ReadExpressionText@7(DocLine@1000 : Record 11069371) Result : Text;
+    BEGIN
+      IF ReadMapping(DocLine) THEN
+        Result := TempMappingLine.ReadExpressionText();
+    END;
+
+    LOCAL PROCEDURE HasMapping@4(DocLine@1000 : Record 11069371) Result : Boolean;
+    BEGIN
+      IF ReadMapping(DocLine) THEN
+        EXIT(TempMappingLine.Expression.HASVALUE)
+    END;
+
+    LOCAL PROCEDURE WriteMember@10(Member@1001 : Record 11069371);
+    VAR
+      ExprId@1000 : Text;
+    BEGIN
+      IF Member."Node Type" = Member."Node Type"::Element THEN BEGIN
+        Writer.WriteStartElement(Member."Node Name");
+        WriteAttributes(Member);
+      END ELSE BEGIN
+        Writer.WriteStartElement('xsl','attribute',Namespace);
+        Writer.WriteAttributeString('name',Member."Node Name");
+      END;
+      IF HasMapping(Member) THEN BEGIN
+        CASE MappingType(Member) OF
+          TempMappingLine."Expression Type"::Xpath: BEGIN
+            Writer.WriteStartElement('xsl','value-of',Namespace);
+            Writer.WriteAttributeString('select',ReadExpressionText(Member));
+            Writer.WriteEndElement();
+          END;
+          TempMappingLine."Expression Type"::Constant: BEGIN
+            Writer.WriteElementString('xsl','text',Namespace,DELCHR(ReadExpressionText(Member),'<>','"'));
+          END;
+          TempMappingLine."Expression Type"::Expression: BEGIN
+            Writer.WriteStartElement('xsl','variable',Namespace);
+            ExprId := STRSUBSTNO('expr%1',Member."Line No.");
+            Writer.WriteAttributeString('name',ExprId);
+            Writer.WriteString(ReadExpressionText(Member));
+            Writer.WriteEndElement();
+            Writer.WriteStartElement('xsl','value-of',Namespace);
+            Writer.WriteAttributeString('select',STRSUBSTNO('ExecuteGrammar:ExecuteExpressionWithContext($%1,.)',ExprId));
+            Writer.WriteEndElement();
+          END;
+        END;
+      END;
+      Writer.WriteEndElement();
+    END;
+
+    LOCAL PROCEDURE MappingType@5(DocLine@1000 : Record 11069371) : Integer;
+    BEGIN
+      ReadMapping(DocLine);
+      EXIT(TempMappingLine."Expression Type");
+    END;
+
+    LOCAL PROCEDURE TIRootNodeCondition@9() : Text;
+    BEGIN
+      IF TempDocumentLine."Document Type" = TempDocumentLine."Document Type"::Internal THEN
+        EXIT('1');
+
+      TempDocumentLine.FINDFIRST;
+      IF HasMapping(TempDocumentLine) THEN
+        EXIT(STRSUBSTNO('count(%1 | ti:document/%1)>1',ReadExpressionText(TempDocumentLine)));
+
+      EXIT('0');
+    END;
+
+    BEGIN
+    END.
+  }
+}

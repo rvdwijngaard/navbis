@@ -1,0 +1,91 @@
+OBJECT Codeunit 11068696 N108 Service Config Mgt
+{
+  OBJECT-PROPERTIES
+  {
+    Date=19-06-14;
+    Time=12:00:00;
+    Version List=NAVBISW17.00;
+  }
+  PROPERTIES
+  {
+    SingleInstance=Yes;
+    OnRun=BEGIN
+            // single instance for performance reasons
+          END;
+
+  }
+  CODE
+  {
+    VAR
+      NavCurrentThreadHelper@1000 : DotNet "'TI.SolutionCenter, Version=13.4.0.0, Culture=neutral, PublicKeyToken=f476381a83e1102f'.TI.SolutionCenter.NavCurrentThreadHelper";
+      NasProcess@1001 : 'Unknown,Yes,No';
+
+    PROCEDURE DatabaseServer@1100499000() : Text;
+    BEGIN
+      EXIT(NavCurrentThreadHelper.AppDatabaseServerName)
+    END;
+
+    PROCEDURE DatabaseName@11068701() : Text;
+    BEGIN
+      EXIT(NavCurrentThreadHelper.AppDatabaseName);
+    END;
+
+    PROCEDURE IsNasProcess@1() : Boolean;
+    VAR
+      ActiveSession@1000 : Record 2000000110;
+    BEGIN
+      IF NasProcess = NasProcess::Unknown THEN BEGIN
+        NasProcess := NasProcess::No;
+        ActiveSession.SETRANGE("Session ID",SESSIONID);
+        ActiveSession.SETRANGE("Server Instance ID",SERVICEINSTANCEID);
+        IF ActiveSession.FINDFIRST THEN BEGIN
+          IF ActiveSession."Client Type" IN [ActiveSession."Client Type"::NAS,ActiveSession."Client Type"::Background] THEN
+            NasProcess := NasProcess::Yes;
+        END ELSE BEGIN
+          IF NOT GUIALLOWED THEN
+            NasProcess := NasProcess::Yes;
+        END;
+      END;
+      EXIT(NasProcess = NasProcess::Yes)
+    END;
+
+    PROCEDURE ServerName@1100499008() rTxtResult : Text[250];
+    VAR
+      ActiveSession@1000 : Record 2000000110;
+    BEGIN
+      ActiveSession.SETRANGE("Session ID",SESSIONID);
+      ActiveSession.SETRANGE("Server Instance ID",SERVICEINSTANCEID);
+      ActiveSession.FINDFIRST;
+      EXIT(ActiveSession."Server Computer Name");
+    END;
+
+    PROCEDURE ServerInstance@11068702() rTxtResult : Text[250];
+    VAR
+      ActiveSession@1000 : Record 2000000110;
+    BEGIN
+      ActiveSession.SETRANGE("Session ID",SESSIONID);
+      ActiveSession.SETRANGE("Server Instance ID",SERVICEINSTANCEID);
+      ActiveSession.FINDFIRST;
+      EXIT(ActiveSession."Server Instance Name");
+    END;
+
+    PROCEDURE ServerUserSID@2() : Text;
+    VAR
+      WindowsIdentity@1000 : DotNet "'mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Security.Principal.WindowsIdentity";
+    BEGIN
+      WindowsIdentity := WindowsIdentity.GetCurrent();
+      EXIT(FORMAT(WindowsIdentity.User));
+    END;
+
+    PROCEDURE ServerUserName@3() : Text;
+    VAR
+      WindowsIdentity@1000 : DotNet "'mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Security.Principal.WindowsIdentity";
+    BEGIN
+      WindowsIdentity := WindowsIdentity.GetCurrent();
+      EXIT(FORMAT(WindowsIdentity.Name));
+    END;
+
+    BEGIN
+    END.
+  }
+}
