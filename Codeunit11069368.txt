@@ -10,6 +10,7 @@ OBJECT Codeunit 11069368 N108 Document Xslt Mgt.
   {
     OnRun=VAR
             TempBlob@1000 : Record 99008535;
+            TempBlob@1000 : Record 99008535;
             Text000@1002 : TextConst 'ENU=%1-%2.xslt';
           BEGIN
           END;
