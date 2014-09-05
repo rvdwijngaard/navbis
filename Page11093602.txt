@@ -1,0 +1,41 @@
+OBJECT Page 11093602 N153 Connection Factbox
+{
+  OBJECT-PROPERTIES
+  {
+    Date=23-06-14;
+    Time=12:00:00;
+    Version List=NAVBISW17.10;
+  }
+  PROPERTIES
+  {
+    SourceTable=Table11093600;
+    PageType=CardPart;
+  }
+  CONTROLS
+  {
+    { 1   ;0   ;Container ;
+                ContainerType=ContentArea }
+
+    { 2   ;1   ;Field     ;
+                SourceExpr="No. of Messages" }
+
+    { 3   ;1   ;Field     ;
+                SourceExpr="No. of Failed Messages" }
+
+    { 4   ;1   ;Field     ;
+                SourceExpr="No. of Pending Messages" }
+
+    { 5   ;1   ;Field     ;
+                SourceExpr="No. of In Process Messages" }
+
+    { 6   ;1   ;Field     ;
+                SourceExpr="No. of Processed Messages" }
+
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}

@@ -1,0 +1,59 @@
+OBJECT Page 11093603 N153 Published Connections
+{
+  OBJECT-PROPERTIES
+  {
+    Date=23-06-14;
+    Time=12:00:00;
+    Version List=NAVBISW17.10;
+  }
+  PROPERTIES
+  {
+    Editable=No;
+    CaptionML=ENU=Published OEM Connections;
+    InsertAllowed=No;
+    DeleteAllowed=No;
+    SourceTable=Table11093600;
+    SourceTableView=WHERE(Status=CONST(Published));
+    PageType=List;
+    CardPageID=N153 Published Connection;
+    OnInit=VAR
+             Text000@1000 : TextConst 'ENU="%1 is not activated or your current version may not be latest; please activate the product via Product Registration."';
+           BEGIN
+           END;
+
+    ActionList=ACTIONS
+    {
+      { 6       ;0   ;ActionContainer;
+                      ActionContainerType=ActionItems }
+      { 5       ;1   ;Action    ;
+                      Name=Export Configuration;
+                      Image=Export;
+                      OnAction=BEGIN
+                                 Export();
+                               END;
+                                }
+    }
+  }
+  CONTROLS
+  {
+    { 1   ;0   ;Container ;
+                ContainerType=ContentArea }
+
+    { 2   ;1   ;Group     ;
+                Name=Group;
+                GroupType=Repeater }
+
+    { 3   ;2   ;Field     ;
+                SourceExpr="No." }
+
+    { 4   ;2   ;Field     ;
+                SourceExpr=Description }
+
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
