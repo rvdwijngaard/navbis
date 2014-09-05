@@ -25,6 +25,7 @@ OBJECT Codeunit 11069620 N108 XmlToXml Translator
       RecRef@1001 : RecordRef;
     BEGIN
       MessageQueue.ReadActivitySetup(RecRef);
+      MessageQueue.ReadActivitySetup(RecRef);
       RecRef.SETTABLE(XmlToXmlTranslator);
     END;
 
